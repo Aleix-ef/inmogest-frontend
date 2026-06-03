@@ -81,6 +81,7 @@ router.beforeEach((to) => {
   const authStore = useAuthStore()
   const hasUser = authStore.isLoggedIn
 
+  // Los guards del frontend mejoran la UX; el backend sigue aplicando los permisos reales.
   if (!hasUser && !isPublicRoute) {
     return { name: 'login' }
   }

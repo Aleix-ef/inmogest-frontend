@@ -19,6 +19,7 @@ export const useAuthStore = defineStore('auth', {
 
   actions: {
     setSession(user, token) {
+      // Persiste la sesion para que un refresco de pagina no cierre la sesion del usuario.
       this.user = user
       this.token = token
       localStorage.setItem('user', JSON.stringify(user))
@@ -50,6 +51,7 @@ export const useAuthStore = defineStore('auth', {
           await api.post('/logout')
         }
       } finally {
+        // Limpia los datos locales aunque falle la peticion al servidor.
         this.clearSession()
       }
     },

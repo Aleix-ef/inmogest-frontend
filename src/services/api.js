@@ -10,6 +10,7 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
 
+  // Cada peticion protegida envia el token de Sanctum generado por el backend.
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -22,6 +23,7 @@ api.interceptors.response.use(
   (error) => {
     const status = error.response?.status
 
+    // Si el token no es valido o ha caducado, se limpia la sesion local y se fuerza el login.
     if (status === 401) {
       localStorage.removeItem('user')
       localStorage.removeItem('token')
@@ -33,6 +35,7 @@ api.interceptors.response.use(
     }
 
     if (status === 403) {
+      // El backend sigue siendo la fuente real de permisos.
       console.warn('No tienes permiso para esta acción.')
     }
 

@@ -55,6 +55,7 @@ export const useDataStore = defineStore('data', {
         : message
       const id = Date.now() + Math.random()
 
+      // Los mensajes se guardan globalmente para que todas las vistas muestren feedback igual.
       this.messages.push({
         id,
         type: normalizedMessage.type ?? 'success',
@@ -71,6 +72,7 @@ export const useDataStore = defineStore('data', {
     },
 
     confirm({ title = 'Confirmar acción', message, confirmText = 'Confirmar' }) {
+      // Devuelve una promesa para que las vistas puedan esperar el modal de confirmacion reutilizable.
       return new Promise((resolve) => {
         this.confirmation = {
           visible: true,
@@ -151,6 +153,7 @@ export const useDataStore = defineStore('data', {
       this.clearError()
 
       try {
+        // Carga los datos del panel en paralelo para reducir la espera inicial.
         await Promise.all([
           this.fetchProperties(),
           this.fetchTenants(),
@@ -286,6 +289,7 @@ export const useDataStore = defineStore('data', {
 
     async updateDocument(id, formData) {
       if (!formData.has('_method')) {
+        // Los formularios multipart se envian con POST y override para que Laravel los trate como PUT.
         formData.append('_method', 'PUT')
       }
 
