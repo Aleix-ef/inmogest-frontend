@@ -43,12 +43,7 @@ onMounted(() => {
         <template v-if="authStore.isLoggedIn">
           <RouterLink class="nav-link px-2" to="/dashboard">Panel</RouterLink>
           <RouterLink class="nav-link px-2" to="/properties">Propiedades</RouterLink>
-          <RouterLink class="nav-link px-2" to="/tenants">Inquilinos</RouterLink>
-          <RouterLink v-if="authStore.role === 'manager'" class="nav-link px-2" to="/owners">Propietarios</RouterLink>
-          <RouterLink v-if="authStore.role === 'manager'" class="nav-link px-2" to="/users">Usuarios</RouterLink>
-          <RouterLink class="nav-link px-2" to="/contracts">Contratos</RouterLink>
-          <RouterLink class="nav-link px-2" to="/payments">Pagos</RouterLink>
-          <RouterLink class="nav-link px-2" to="/documents">Documentos</RouterLink>
+          <RouterLink class="nav-link px-2" to="/agenda">Agenda</RouterLink>
           <button class="btn btn-outline-secondary btn-sm" type="button" @click="toggleTheme">
             {{ isDarkMode ? 'Modo claro' : 'Modo oscuro' }}
           </button>

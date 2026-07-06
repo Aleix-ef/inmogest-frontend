@@ -23,6 +23,8 @@ const registerSchema = yup.object({
     .string()
     .required('La contraseña es obligatoria')
     .min(8, 'La contraseña debe tener al menos 8 caracteres'),
+  wants_newsletter: yup
+    .boolean(),
 })
 
 const register = async (values) => {
@@ -60,6 +62,13 @@ const register = async (values) => {
         <Field id="password" name="password" type="password" autocomplete="new-password" />
         <ErrorMessage class="field-error" name="password" />
       </div>
+
+      <label class="form-check d-flex align-items-start gap-2">
+        <Field name="wants_newsletter" type="checkbox" :value="true" :unchecked-value="false" class="form-check-input mt-1" />
+        <span class="form-check-label">
+          Quiero recibir novedades, consejos e información sobre InmoGest por email.
+        </span>
+      </label>
 
       <button type="submit">Registrarse</button>
       <p v-if="error" class="form-error">{{ error }}</p>

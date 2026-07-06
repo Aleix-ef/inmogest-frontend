@@ -3,6 +3,7 @@ import { useAuthStore } from '@/stores/auth'
 import { getErrorMessage } from '@/utils/forms'
 import { Form, Field, ErrorMessage } from 'vee-validate'
 import { ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import { useRouter } from 'vue-router'
 import * as yup from 'yup'
 
@@ -51,6 +52,7 @@ const login = async (values) => {
         </div>
 
         <button type="submit">Entrar</button>
+        <RouterLink class="small" to="/forgot-password">He olvidado mi contraseña</RouterLink>
         <p v-if="error" class="form-error">{{ error }}</p>
       </Form>
     </section>

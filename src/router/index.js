@@ -22,6 +22,12 @@ const router = createRouter({
       meta: { roles: ['owner', 'manager'] },
     },
     {
+      path: '/properties/:id',
+      name: 'property-detail',
+      component: () => import('../views/PropertyDetailView.vue'),
+      meta: { roles: ['owner', 'manager'] },
+    },
+    {
       path: '/tenants',
       name: 'tenants',
       component: () => import('../views/TenantsView.vue'),
@@ -52,6 +58,24 @@ const router = createRouter({
       meta: { roles: ['owner', 'manager'] },
     },
     {
+      path: '/collections',
+      name: 'collections',
+      component: () => import('../views/CollectionsView.vue'),
+      meta: { roles: ['owner', 'manager'] },
+    },
+    {
+      path: '/agenda',
+      name: 'agenda',
+      component: () => import('../views/AgendaView.vue'),
+      meta: { roles: ['owner', 'manager'] },
+    },
+    {
+      path: '/expenses',
+      name: 'expenses',
+      component: () => import('../views/PropertyExpensesView.vue'),
+      meta: { roles: ['owner', 'manager'] },
+    },
+    {
       path: '/documents',
       name: 'documents',
       component: () => import('../views/DocumentsView.vue'),
@@ -68,6 +92,16 @@ const router = createRouter({
       component: () => import('../views/RegisterView.vue'),
     },
     {
+      path: '/forgot-password',
+      name: 'forgot-password',
+      component: () => import('../views/ForgotPasswordView.vue'),
+    },
+    {
+      path: '/reset-password',
+      name: 'reset-password',
+      component: () => import('../views/ResetPasswordView.vue'),
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
       component: () => import('../views/NotFoundView.vue'),
@@ -76,7 +110,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
-  const publicRoutes = ['landing', 'login', 'register', 'not-found']
+  const publicRoutes = ['landing', 'login', 'register', 'forgot-password', 'reset-password', 'not-found']
   const isPublicRoute = publicRoutes.includes(to.name)
   const authStore = useAuthStore()
   const hasUser = authStore.isLoggedIn

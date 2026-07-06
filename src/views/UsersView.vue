@@ -23,6 +23,7 @@ const emptyForm = () => ({
   email: '',
   password: '',
   role: 'owner',
+  wants_newsletter: false,
 })
 
 const form = ref(emptyForm())
@@ -49,6 +50,8 @@ const userSchema = computed(() =>
       .string()
       .required('Selecciona un rol')
       .oneOf(['manager', 'owner'], 'El rol no es válido'),
+    wants_newsletter: yup
+      .boolean(),
   }),
 )
 
@@ -77,6 +80,7 @@ const editUser = (user) => {
     email: user.email ?? '',
     password: '',
     role: user.role ?? 'owner',
+    wants_newsletter: Boolean(user.wants_newsletter),
   }
   editId.value = user.id
   formError.value = ''
@@ -97,6 +101,7 @@ const saveUser = async (values) => {
     name: values.name,
     email: values.email,
     role: values.role,
+    wants_newsletter: Boolean(values.wants_newsletter),
   }
 
   if (values.password) {
@@ -204,6 +209,11 @@ onMounted(async () => {
         <ErrorMessage class="field-error" name="role" />
       </div>
 
+      <label class="form-check d-flex align-items-start gap-2">
+        <Field name="wants_newsletter" type="checkbox" :value="true" :unchecked-value="false" class="form-check-input mt-1" />
+        <span class="form-check-label">Acepta recibir novedades e información por email</span>
+      </label>
+
       <div class="form-actions">
         <button class="btn btn-success" type="submit">{{ editId ? 'Guardar cambios' : 'Crear' }}</button>
         <button v-if="editId" class="btn btn-outline-secondary" type="button" @click="cancelEdit">Cancelar edición</button>
@@ -234,6 +244,7 @@ onMounted(async () => {
               <tr>
                 <th>Usuario</th>
                 <th>Rol</th>
+                <th>Newsletter</th>
                 <th>Creado</th>
                 <th class="text-end">Acciones</th>
               </tr>
@@ -245,6 +256,11 @@ onMounted(async () => {
                   <p class="text-secondary small mb-0">{{ user.email }}</p>
                 </td>
                 <td><span class="badge text-bg-light">{{ roleLabels[user.role] ?? user.role }}</span></td>
+                <td>
+                  <span class="badge" :class="user.wants_newsletter ? 'text-bg-success' : 'text-bg-secondary'">
+                    {{ user.wants_newsletter ? 'Sí' : 'No' }}
+                  </span>
+                </td>
                 <td>{{ user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Sin fecha' }}</td>
                 <td class="text-end">
                   <div class="btn-group btn-group-sm">

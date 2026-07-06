@@ -16,6 +16,9 @@ export const useDataStore = defineStore('data', {
     owners: [],
     contracts: [],
     payments: [],
+    paymentAlerts: null,
+    agenda: null,
+    propertyExpenses: [],
     documents: [],
     users: [],
     loading: false,
@@ -36,6 +39,7 @@ export const useDataStore = defineStore('data', {
     getOwnerById: (state) => (id) => state.owners.find((owner) => owner.id === id),
     getContractById: (state) => (id) => state.contracts.find((contract) => contract.id === id),
     getPaymentById: (state) => (id) => state.payments.find((payment) => payment.id === id),
+    getPropertyExpenseById: (state) => (id) => state.propertyExpenses.find((expense) => expense.id === id),
     getDocumentById: (state) => (id) => state.documents.find((document) => document.id === id),
     getUserById: (state) => (id) => state.users.find((user) => user.id === id),
   },
@@ -136,6 +140,44 @@ export const useDataStore = defineStore('data', {
       return response.data
     },
 
+    async fetchPaymentAlerts() {
+      const response = await api.get('/payment-alerts')
+      this.paymentAlerts = response.data
+      return response.data
+    },
+
+    async fetchAgenda() {
+      const response = await api.get('/agenda')
+      this.agenda = response.data
+      return response.data
+    },
+
+    async createAgendaEvent(data) {
+      const response = await api.post('/agenda-events', data)
+      await this.fetchAgenda()
+      this.addMessage('Recordatorio creado correctamente.')
+      return response.data
+    },
+
+    async updateAgendaEvent(id, data) {
+      const response = await api.put(`/agenda-events/${id}`, data)
+      await this.fetchAgenda()
+      this.addMessage('Recordatorio actualizado correctamente.')
+      return response.data
+    },
+
+    async deleteAgendaEvent(id) {
+      await api.delete(`/agenda-events/${id}`)
+      await this.fetchAgenda()
+      this.addMessage('Recordatorio borrado correctamente.')
+    },
+
+    async fetchPropertyExpenses() {
+      const response = await api.get('/property-expenses')
+      this.propertyExpenses = response.data
+      return response.data
+    },
+
     async fetchDocuments() {
       const response = await api.get('/documents')
       this.documents = response.data
@@ -160,6 +202,9 @@ export const useDataStore = defineStore('data', {
           this.fetchOwners(),
           this.fetchContracts(),
           this.fetchPayments(),
+          this.fetchPaymentAlerts(),
+          this.fetchAgenda(),
+          this.fetchPropertyExpenses(),
           this.fetchDocuments(),
         ])
       } catch {
@@ -177,7 +222,13 @@ export const useDataStore = defineStore('data', {
     },
 
     async updateProperty(id, data) {
-      const response = await api.put(`/properties/${id}`, data)
+      if (data instanceof FormData && !data.has('_method')) {
+        data.append('_method', 'PUT')
+      }
+
+      const response = data instanceof FormData
+        ? await api.post(`/properties/${id}`, data)
+        : await api.put(`/properties/${id}`, data)
       replaceById(this.properties, response.data)
       this.addMessage('Propiedad actualizada correctamente.')
       return response.data
@@ -263,6 +314,8 @@ export const useDataStore = defineStore('data', {
     async createPayment(data) {
       const response = await api.post('/payments', data)
       this.payments.push(response.data)
+      await this.fetchPaymentAlerts()
+      await this.fetchAgenda()
       this.addMessage('Pago creado correctamente.')
       return response.data
     },
@@ -270,6 +323,8 @@ export const useDataStore = defineStore('data', {
     async updatePayment(id, data) {
       const response = await api.put(`/payments/${id}`, data)
       replaceById(this.payments, response.data)
+      await this.fetchPaymentAlerts()
+      await this.fetchAgenda()
       this.addMessage('Pago actualizado correctamente.')
       return response.data
     },
@@ -277,7 +332,32 @@ export const useDataStore = defineStore('data', {
     async deletePayment(id) {
       await api.delete(`/payments/${id}`)
       this.payments = this.payments.filter((payment) => payment.id !== id)
+      await this.fetchPaymentAlerts()
+      await this.fetchAgenda()
       this.addMessage('Pago borrado correctamente.')
+    },
+
+    async createPropertyExpense(data) {
+      const response = await api.post('/property-expenses', data)
+      this.propertyExpenses.push(response.data)
+      await this.fetchAgenda()
+      this.addMessage('Gasto creado correctamente.')
+      return response.data
+    },
+
+    async updatePropertyExpense(id, data) {
+      const response = await api.put(`/property-expenses/${id}`, data)
+      replaceById(this.propertyExpenses, response.data)
+      await this.fetchAgenda()
+      this.addMessage('Gasto actualizado correctamente.')
+      return response.data
+    },
+
+    async deletePropertyExpense(id) {
+      await api.delete(`/property-expenses/${id}`)
+      this.propertyExpenses = this.propertyExpenses.filter((expense) => expense.id !== id)
+      await this.fetchAgenda()
+      this.addMessage('Gasto borrado correctamente.')
     },
 
     async createDocument(formData) {

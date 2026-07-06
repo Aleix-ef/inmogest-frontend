@@ -45,6 +45,16 @@ export const useAuthStore = defineStore('auth', {
       return response.data
     },
 
+    async forgotPassword(data) {
+      const response = await api.post('/forgot-password', data)
+      return response.data
+    },
+
+    async resetPassword(data) {
+      const response = await api.post('/reset-password', data)
+      return response.data
+    },
+
     async logout() {
       try {
         if (this.token) {

@@ -8,7 +8,7 @@ import { RouterLink } from 'vue-router'
 
 const dataStore = useDataStore()
 const authStore = useAuthStore()
-const { properties, tenants, owners, contracts, payments, documents } = storeToRefs(dataStore)
+const { properties, tenants, owners, contracts, payments, paymentAlerts, propertyExpenses, documents } = storeToRefs(dataStore)
 const loading = ref(true)
 const error = ref('')
 const isManager = computed(() => authStore.role === 'manager')
@@ -16,6 +16,22 @@ const isManager = computed(() => authStore.role === 'manager')
 const totalIncome = computed(() =>
   payments.value.reduce((total, payment) => total + Number(payment.amount), 0),
 )
+
+const totalExpenses = computed(() =>
+  propertyExpenses.value.reduce((total, expense) => total + Number(expense.amount), 0),
+)
+
+const netProfit = computed(() => totalIncome.value - totalExpenses.value)
+
+const collectionSummary = computed(() => paymentAlerts.value?.summary ?? {
+  paid: 0,
+  pending: 0,
+  overdue: 0,
+  expected_amount: 0,
+  paid_amount: 0,
+  pending_amount: 0,
+  expiring_contracts: 0,
+})
 
 const activeContracts = computed(() =>
   contracts.value.filter((contract) => contract.status === 'active'),
@@ -47,6 +63,12 @@ const latestPayments = computed(() =>
     .slice(0, 5),
 )
 
+const latestExpenses = computed(() =>
+  [...propertyExpenses.value]
+    .sort((first, second) => new Date(second.expense_date) - new Date(first.expense_date))
+    .slice(0, 5),
+)
+
 const latestContracts = computed(() =>
   [...contracts.value]
     .sort((first, second) => new Date(second.start_date) - new Date(first.start_date))
@@ -61,22 +83,22 @@ const summaryCards = computed(() => [
     tone: 'success',
   },
   {
+    label: 'Gastos registrados',
+    value: `${totalExpenses.value.toFixed(2)} €`,
+    detail: `${propertyExpenses.value.length} gastos`,
+    tone: 'danger',
+  },
+  {
+    label: 'Beneficio neto',
+    value: `${netProfit.value.toFixed(2)} €`,
+    detail: 'ingresos menos gastos',
+    tone: netProfit.value >= 0 ? 'primary' : 'warning',
+  },
+  {
     label: 'Ocupación',
     value: `${occupancyRate.value}%`,
     detail: `${rentedProperties.value} de ${properties.value.length} propiedades`,
-    tone: 'primary',
-  },
-  {
-    label: 'Contratos activos',
-    value: activeContracts.value.length,
-    detail: `${contracts.value.length} contratos totales`,
     tone: 'info',
-  },
-  {
-    label: 'Documentación',
-    value: documents.value.length,
-    detail: 'archivos vinculados',
-    tone: 'secondary',
   },
 ])
 
@@ -85,6 +107,9 @@ const quickLinks = computed(() => [
   { label: 'Nuevo inquilino', to: '/tenants' },
   { label: 'Nuevo contrato', to: '/contracts' },
   { label: 'Registrar pago', to: '/payments' },
+  { label: 'Control de cobros', to: '/collections' },
+  { label: 'Agenda', to: '/agenda' },
+  { label: 'Registrar gasto', to: '/expenses' },
   { label: 'Subir documento', to: '/documents' },
   ...(isManager.value ? [{ label: 'Propietarios', to: '/owners' }] : []),
   ...(isManager.value ? [{ label: 'Usuarios', to: '/users' }] : []),
@@ -109,6 +134,18 @@ const statusLabels = {
   cancelled: 'Cancelado',
 }
 
+const expenseCategoryLabels = {
+  community: 'Comunidad',
+  ibi: 'IBI',
+  insurance: 'Seguro',
+  repair: 'Reparación',
+  maintenance: 'Mantenimiento',
+  utilities: 'Suministros',
+  cleaning: 'Limpieza',
+  management: 'Gestoría',
+  other: 'Otros',
+}
+
 onMounted(async () => {
   try {
     await Promise.all([
@@ -116,6 +153,8 @@ onMounted(async () => {
       dataStore.fetchTenants(),
       dataStore.fetchContracts(),
       dataStore.fetchPayments(),
+      dataStore.fetchPaymentAlerts(),
+      dataStore.fetchPropertyExpenses(),
       dataStore.fetchDocuments(),
       isManager.value ? dataStore.fetchOwners() : Promise.resolve(),
     ])
@@ -134,7 +173,7 @@ onMounted(async () => {
         <span class="badge text-bg-success mb-3">Panel principal</span>
         <h1 class="mb-2">Resumen de InmoGest</h1>
         <p class="text-secondary mb-0">
-          Revisa de un vistazo ingresos, ocupación, contratos, pagos recientes y accesos rápidos.
+          Revisa de un vistazo ingresos, gastos, beneficio, ocupación y accesos rápidos.
         </p>
       </div>
       <div class="hero-number">
@@ -161,6 +200,30 @@ onMounted(async () => {
             <strong>{{ owners.length }}</strong>
             <small>contactos administrados</small>
           </article>
+        </div>
+      </section>
+
+      <section class="row g-3">
+        <div class="col-md-4">
+          <RouterLink class="alert-card alert-card-warning" to="/collections">
+            <span>Pendientes este mes</span>
+            <strong>{{ collectionSummary.pending }}</strong>
+            <small>{{ Number(collectionSummary.pending_amount).toFixed(2) }} € por revisar</small>
+          </RouterLink>
+        </div>
+        <div class="col-md-4">
+          <RouterLink class="alert-card alert-card-danger" to="/collections">
+            <span>Pagos atrasados</span>
+            <strong>{{ collectionSummary.overdue }}</strong>
+            <small>contratos fuera de plazo</small>
+          </RouterLink>
+        </div>
+        <div class="col-md-4">
+          <RouterLink class="alert-card alert-card-info" to="/collections">
+            <span>Vencen pronto</span>
+            <strong>{{ collectionSummary.expiring_contracts }}</strong>
+            <small>contratos en 60 días</small>
+          </RouterLink>
         </div>
       </section>
 
@@ -210,7 +273,7 @@ onMounted(async () => {
       </section>
 
       <section class="row g-3">
-        <div class="col-lg-6">
+        <div class="col-xl-4">
           <article class="dashboard-panel h-100">
             <div class="d-flex justify-content-between gap-3 mb-3">
               <h2 class="h5 mb-0">Últimos pagos</h2>
@@ -229,7 +292,26 @@ onMounted(async () => {
           </article>
         </div>
 
-        <div class="col-lg-6">
+        <div class="col-xl-4">
+          <article class="dashboard-panel h-100">
+            <div class="d-flex justify-content-between gap-3 mb-3">
+              <h2 class="h5 mb-0">Últimos gastos</h2>
+              <RouterLink class="small" to="/expenses">Ver gastos</RouterLink>
+            </div>
+            <ul class="activity-list">
+              <li v-for="expense in latestExpenses" :key="expense.id">
+                <span>
+                  <strong>{{ expense.property?.title ?? 'Propiedad sin título' }}</strong>
+                  <small>{{ expense.expense_date }} · {{ expenseCategoryLabels[expense.category] ?? expense.category }}</small>
+                </span>
+                <strong>{{ Number(expense.amount).toFixed(2) }} €</strong>
+              </li>
+              <li v-if="latestExpenses.length === 0" class="text-secondary">No hay gastos registrados.</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="col-xl-4">
           <article class="dashboard-panel h-100">
             <div class="d-flex justify-content-between gap-3 mb-3">
               <h2 class="h5 mb-0">Contratos recientes</h2>
@@ -310,6 +392,47 @@ onMounted(async () => {
 .summary-card strong {
   font-size: 1.8rem;
   line-height: 1.1;
+}
+
+.alert-card {
+  display: grid;
+  gap: 4px;
+  height: 100%;
+  padding: 16px;
+  color: inherit;
+  text-decoration: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 5px solid var(--color-primary);
+  border-radius: 8px;
+  box-shadow: var(--shadow-panel);
+}
+
+.alert-card:hover {
+  transform: translateY(-1px);
+}
+
+.alert-card span,
+.alert-card small {
+  color: var(--color-muted);
+  font-weight: 700;
+}
+
+.alert-card strong {
+  font-size: 1.7rem;
+  line-height: 1.1;
+}
+
+.alert-card-warning {
+  border-left-color: var(--bs-warning);
+}
+
+.alert-card-danger {
+  border-left-color: var(--bs-danger);
+}
+
+.alert-card-info {
+  border-left-color: var(--bs-info);
 }
 
 .property-progress {
